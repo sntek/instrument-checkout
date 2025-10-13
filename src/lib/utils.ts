@@ -18,7 +18,7 @@ export function formatTime(d: Date) {
 export function generateTimeSlots() {
   const slots: string[] = []
   const start = new Date()
-  start.setHours(7, 30, 0, 0)
+  start.setHours(8, 0, 0, 0)
   const end = new Date()
   end.setHours(17, 0, 0, 0)
   const cursor = new Date(start)
@@ -29,4 +29,28 @@ export function generateTimeSlots() {
     cursor.setTime(next.getTime())
   }
   return slots
+}
+
+export function generateTimeSlotsForDate(date: Date) {
+  const slots: string[] = []
+  const start = new Date(date)
+  start.setHours(8, 0, 0, 0)
+  const end = new Date(date)
+  end.setHours(17, 0, 0, 0)
+  const cursor = new Date(start)
+  while (cursor < end) {
+    const next = new Date(cursor.getTime() + 30 * 60 * 1000)
+    const label = `${formatTime(cursor)} - ${formatTime(next)}`
+    slots.push(label)
+    cursor.setTime(next.getTime())
+  }
+  return slots
+}
+
+export function formatDate(date: Date) {
+  return date.toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    month: 'short', 
+    day: 'numeric' 
+  })
 }
