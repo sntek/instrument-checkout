@@ -9,7 +9,11 @@
     "test": "vitest run",
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check"
+    "check": "biome check",
+    "worker:dev": "wrangler dev",
+    "worker:deploy": "wrangler deploy",
+    "worker:db:create": "wrangler d1 create instrument-checkout-db",
+    "worker:db:migrate": "wrangler d1 execute instrument-checkout-db --file=./schema.sql"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.49.0",
@@ -41,6 +45,7 @@
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^5.0.4",
+    "itty-router": "^5.0.0",
     "jsdom": "^27.0.0",
     "typescript": "^5.7.2",
     "vite": "^7.1.7",

@@ -15,14 +15,20 @@ interface Instrument {
   ip?: string
 }
 
+interface ReservationInfo {
+  reserverName: string
+  id: string
+}
+
 interface InstrumentSchedulingDialogProps {
   instrument: Instrument
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  reservationsByInstrument: Record<string, Record<string, string>>
+  reservationsByInstrument: Record<string, Record<string, ReservationInfo>>
   currentDisplayName: string
   onToggleSlot: (instrumentName: string, slot: string, date: string) => void
   onIsSlotReserved: (instrumentName: string, slot: string, date: string) => boolean
+  onIsOptimisticallyUpdating: (instrumentName: string, slot: string, date: string) => boolean
 }
 
 export function InstrumentSchedulingDialog({
@@ -33,6 +39,7 @@ export function InstrumentSchedulingDialog({
   currentDisplayName,
   onToggleSlot,
   onIsSlotReserved,
+  onIsOptimisticallyUpdating,
 }: InstrumentSchedulingDialogProps) {
   const today = new Date()
   const tomorrow = new Date(today)
@@ -55,7 +62,8 @@ export function InstrumentSchedulingDialog({
         <div className="flex w-full items-end gap-1 justify-center">
           {todaySlots.map((slot) => {
             const reserved = onIsSlotReserved(instrument.name, slot, todayDateString)
-            const reserver = reservationsByInstrument[instrument.name]?.[`${todayDateString}-${slot}`]
+            const reservationInfo = reservationsByInstrument[instrument.name]?.[`${todayDateString}-${slot}`]
+            const reserver = reservationInfo?.reserverName
             return (
               <Tooltip key={slot}>
                 <TooltipTrigger asChild>
@@ -142,20 +150,28 @@ export function InstrumentSchedulingDialog({
               <div className="absolute inset-0 flex gap-[1px] p-1">
                 {todaySlots.map((slot) => {
                   const selected = Boolean(reservationsByInstrument[instrument.name]?.[`${todayDateString}-${slot}`])
-                  const reserver = reservationsByInstrument[instrument.name]?.[`${todayDateString}-${slot}`]
+                  const reservationInfo = reservationsByInstrument[instrument.name]?.[`${todayDateString}-${slot}`]
+                  const reserver = reservationInfo?.reserverName
                   const isMine = reserver && reserver === currentDisplayName
+                  const isOptimisticallyUpdating = onIsOptimisticallyUpdating(instrument.name, slot, todayDateString)
                   return (
                     <Tooltip key={slot}>
                       <TooltipTrigger asChild>
                         <button
                           type="button"
                           onClick={() => onToggleSlot(instrument.name, slot, todayDateString)}
-                          className={`flex-1 relative rounded-md outline-none transition-[transform,box-shadow] focus-visible:ring-2 focus-visible:ring-cyan-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900`}
+                          className={`flex-1 relative rounded-md outline-none transition-[transform,box-shadow] focus-visible:ring-2 focus-visible:ring-cyan-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${isOptimisticallyUpdating ? 'animate-pulse' : ''}`}
                           aria-label={`Toggle ${slot}${reserver ? ` (reserved by ${reserver})` : ''}`}
+                          disabled={isOptimisticallyUpdating}
                         >
                           <span
-                            className={`absolute inset-0 rounded-md ${selected ? (isMine ? 'bg-cyan-500/90' : 'bg-rose-500/80') : 'bg-slate-800/0 hover:bg-slate-700/40'} shadow ${selected ? 'shadow-cyan-500/10' : 'shadow-none'}`}
+                            className={`absolute inset-0 rounded-md ${selected ? (isMine ? 'bg-cyan-500/90' : 'bg-rose-500/80') : 'bg-slate-800/0 hover:bg-slate-700/40'} shadow ${selected ? 'shadow-cyan-500/10' : 'shadow-none'} ${isOptimisticallyUpdating ? 'opacity-70' : ''}`}
                           />
+                          {isOptimisticallyUpdating && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" />
+                            </div>
+                          )}
                         </button>
                       </TooltipTrigger>
                       <TooltipContent side="top">
@@ -196,20 +212,28 @@ export function InstrumentSchedulingDialog({
               <div className="absolute inset-0 flex gap-[1px] p-1">
                 {tomorrowSlots.map((slot) => {
                   const selected = Boolean(reservationsByInstrument[instrument.name]?.[`${tomorrowDateString}-${slot}`])
-                  const reserver = reservationsByInstrument[instrument.name]?.[`${tomorrowDateString}-${slot}`]
+                  const reservationInfo = reservationsByInstrument[instrument.name]?.[`${tomorrowDateString}-${slot}`]
+                  const reserver = reservationInfo?.reserverName
                   const isMine = reserver && reserver === currentDisplayName
+                  const isOptimisticallyUpdating = onIsOptimisticallyUpdating(instrument.name, slot, tomorrowDateString)
                   return (
                     <Tooltip key={slot}>
                       <TooltipTrigger asChild>
                         <button
                           type="button"
                           onClick={() => onToggleSlot(instrument.name, slot, tomorrowDateString)}
-                          className={`flex-1 relative rounded-md outline-none transition-[transform,box-shadow] focus-visible:ring-2 focus-visible:ring-cyan-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900`}
+                          className={`flex-1 relative rounded-md outline-none transition-[transform,box-shadow] focus-visible:ring-2 focus-visible:ring-cyan-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${isOptimisticallyUpdating ? 'animate-pulse' : ''}`}
                           aria-label={`Toggle ${slot}${reserver ? ` (reserved by ${reserver})` : ''}`}
+                          disabled={isOptimisticallyUpdating}
                         >
                           <span
-                            className={`absolute inset-0 rounded-md ${selected ? (isMine ? 'bg-cyan-500/90' : 'bg-rose-500/80') : 'bg-slate-800/0 hover:bg-slate-700/40'} shadow ${selected ? 'shadow-cyan-500/10' : 'shadow-none'}`}
+                            className={`absolute inset-0 rounded-md ${selected ? (isMine ? 'bg-cyan-500/90' : 'bg-rose-500/80') : 'bg-slate-800/0 hover:bg-slate-700/40'} shadow ${selected ? 'shadow-cyan-500/10' : 'shadow-none'} ${isOptimisticallyUpdating ? 'opacity-70' : ''}`}
                           />
+                          {isOptimisticallyUpdating && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" />
+                            </div>
+                          )}
                         </button>
                       </TooltipTrigger>
                       <TooltipContent side="top">

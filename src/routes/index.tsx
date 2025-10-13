@@ -6,6 +6,7 @@ import { SignInRequired } from '@/components/SignInRequired'
 import { InstrumentCard } from '@/components/InstrumentCard'
 import { instruments } from '@/data/instruments'
 import ClerkHeader from '@/integrations/clerk/header-user'
+import { useReservations } from '@/hooks/useReservations'
 
 export const Route = createFileRoute('/')({
   component: App,
@@ -13,9 +14,15 @@ export const Route = createFileRoute('/')({
 
 function App() {
   const [openInstrument, setOpenInstrument] = React.useState<string | null>(null)
-  const [reservationsByInstrument, setReservationsByInstrument] = React.useState<Record<string, Record<string, string>>>({})
   const { user } = useUser()
+  const { reservations, loading, error, createReservation, deleteReservation, refetch: fetchReservations, optimisticUpdates } = useReservations()
+  
   const currentDisplayName = React.useMemo(() => {
+    if (user?.firstName && user?.lastName) {
+      const cleanFirstName = user.firstName.trim().replace(/,$/, '')
+      const cleanLastName = user.lastName.trim().replace(/,$/, '')
+      return `${cleanLastName} ${cleanFirstName}`
+    }
     return (
       user?.fullName ||
       user?.username ||
@@ -25,20 +32,51 @@ function App() {
   }, [user])
 
   function isSlotReserved(instrumentName: string, slot: string, date: string) {
-    return Boolean(reservationsByInstrument[instrumentName]?.[`${date}-${slot}`])
+    return Boolean(reservations[instrumentName]?.[`${date}-${slot}`])
+  }
+
+  function getReservationInfo(instrumentName: string, slot: string, date: string) {
+    return reservations[instrumentName]?.[`${date}-${slot}`]
+  }
+
+  function isOptimisticallyUpdating(instrumentName: string, slot: string, date: string) {
+    const slotKey = `${date}-${slot}`
+    const updateKey = `${instrumentName}-${slotKey}`
+    return optimisticUpdates.has(updateKey)
   }
 
   async function toggleSlot(instrumentName: string, slot: string, date: string) {
-    // optimistic update
-    setReservationsByInstrument((prev) => {
-      const next: Record<string, Record<string, string>> = { ...prev }
-      const current = { ...(next[instrumentName] ?? {}) }
-      const slotKey = `${date}-${slot}`
-      if (current[slotKey]) delete current[slotKey]
-      else current[slotKey] = currentDisplayName
-      next[instrumentName] = current
-      return next
-    })
+    const slotKey = `${date}-${slot}`
+    const reservationInfo = getReservationInfo(instrumentName, slot, date)
+    const isReserved = Boolean(reservationInfo)
+    
+    console.log('Toggle slot:', { instrumentName, slot, date, slotKey, isReserved, reservationInfo, currentReservations: reservations })
+    
+    try {
+      if (isReserved) {
+        // Delete the reservation using the ID
+        console.log('Deleting reservation for:', { instrumentName, slot, date, id: reservationInfo?.id })
+        if (reservationInfo?.id) {
+          await deleteReservation(reservationInfo.id, instrumentName, slot, date)
+          console.log('Reservation deleted')
+        } else {
+          console.error('No reservation ID found for deletion')
+        }
+      } else {
+        // Create new reservation
+        console.log('Creating reservation:', { instrumentName, slot, date, reserverName: currentDisplayName })
+        await createReservation({
+          instrumentName,
+          slot,
+          date,
+          reserverName: currentDisplayName
+        })
+        console.log('Reservation created, should refresh automatically')
+      }
+    } catch (error) {
+      console.error('Error toggling slot:', error)
+      // You might want to show a toast notification here
+    }
   }
 
   return (
@@ -56,10 +94,11 @@ function App() {
                 instrument={instrument}
                 isOpen={openInstrument === instrument.name}
                 onOpenChange={(open) => setOpenInstrument(open ? instrument.name : null)}
-                reservationsByInstrument={reservationsByInstrument}
+                reservationsByInstrument={reservations}
                 currentDisplayName={currentDisplayName}
                 onToggleSlot={toggleSlot}
                 onIsSlotReserved={isSlotReserved}
+                onIsOptimisticallyUpdating={isOptimisticallyUpdating}
               />
             ))}
           </div>

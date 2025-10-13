@@ -1,0 +1,12 @@
+name = "instrument-checkout-api"
+main = "src/worker.ts"
+compatibility_date = "2024-01-15"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "instrument-checkout-db"
+database_id = "4a9999a1-71cc-476a-ab74-ae2b119c331f"
+
+[vars]
+ENVIRONMENT = "development"
