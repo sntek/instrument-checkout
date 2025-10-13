@@ -15,7 +15,11 @@ export const Route = createFileRoute('/')({
 function App() {
   const [openInstrument, setOpenInstrument] = React.useState<string | null>(null)
   const { user } = useUser()
-  const { reservations, loading, error, createReservation, deleteReservation, refetch: fetchReservations, optimisticUpdates } = useReservations()
+  const { 
+    reservations, 
+    createReservation, 
+    deleteReservation, 
+    optimisticUpdates  } = useReservations({ pollingInterval: 30000, enablePolling: true })
   
   const currentDisplayName = React.useMemo(() => {
     if (user?.firstName && user?.lastName) {

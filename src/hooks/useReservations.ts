@@ -1,26 +1,45 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { apiClient } from '../lib/api'
 import { ReservationsByInstrument, CreateReservationRequest } from '../types'
 
-export function useReservations() {
+interface UseReservationsOptions {
+  pollingInterval?: number // in milliseconds, default 30000 (30 seconds)
+  enablePolling?: boolean // default true
+}
+
+export function useReservations(options: UseReservationsOptions = {}) {
+  const { pollingInterval = 30000, enablePolling = true } = options
+  
   const [reservations, setReservations] = useState<ReservationsByInstrument>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [optimisticUpdates, setOptimisticUpdates] = useState<Set<string>>(new Set())
+  const [isPolling, setIsPolling] = useState(false)
+  
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
+  const lastFetchRef = useRef<number>(0)
 
-  const fetchReservations = useCallback(async () => {
+  const fetchReservations = useCallback(async (isPolling = false) => {
     try {
-      console.log('Fetching reservations...')
-      setLoading(true)
+      // Don't show loading spinner for polling requests
+      if (!isPolling) {
+        console.log('Fetching reservations...')
+        setLoading(true)
+      } else {
+        console.log('Polling reservations...')
+      }
       setError(null)
       const data = await apiClient.getReservations()
       console.log('Fetched reservations:', data)
       setReservations(data)
+      lastFetchRef.current = Date.now()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch reservations')
       console.error('Error fetching reservations:', err)
     } finally {
-      setLoading(false)
+      if (!isPolling) {
+        setLoading(false)
+      }
     }
   }, [])
 
@@ -163,9 +182,57 @@ export function useReservations() {
     }
   }, [fetchReservations, optimisticDeleteReservation])
 
+  // Polling control functions
+  const startPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current)
+    }
+    
+    if (enablePolling && pollingInterval > 0) {
+      setIsPolling(true)
+      pollingRef.current = setInterval(() => {
+        fetchReservations(true)
+      }, pollingInterval)
+      console.log(`Started polling every ${pollingInterval}ms`)
+    }
+  }, [enablePolling, pollingInterval, fetchReservations])
+
+  const stopPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current)
+      pollingRef.current = null
+    }
+    setIsPolling(false)
+    console.log('Stopped polling')
+  }, [])
+
+  const pausePolling = useCallback(() => {
+    stopPolling()
+  }, [stopPolling])
+
+  const resumePolling = useCallback(() => {
+    startPolling()
+  }, [startPolling])
+
+  // Initial fetch and polling setup
   useEffect(() => {
     fetchReservations()
-  }, [fetchReservations])
+    startPolling()
+    
+    // Cleanup polling on unmount
+    return () => {
+      stopPolling()
+    }
+  }, [fetchReservations, startPolling, stopPolling])
+
+  // Pause polling when user is actively making changes
+  useEffect(() => {
+    if (optimisticUpdates.size > 0) {
+      pausePolling()
+    } else {
+      resumePolling()
+    }
+  }, [optimisticUpdates.size, pausePolling, resumePolling])
 
   return {
     reservations,
@@ -174,6 +241,11 @@ export function useReservations() {
     createReservation,
     deleteReservation,
     refetch: fetchReservations,
-    optimisticUpdates
+    optimisticUpdates,
+    isPolling,
+    startPolling,
+    stopPolling,
+    pausePolling,
+    resumePolling
   }
 }
