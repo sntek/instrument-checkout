@@ -134,7 +134,7 @@ export function useReservations(options: UseReservationsOptions = {}) {
     }
   }, [fetchReservations, optimisticCreateReservation])
 
-  const deleteReservation = useCallback(async (id: string, instrumentName?: string, slot?: string, date?: string) => {
+  const deleteReservation = useCallback(async (id: string, reserverUserId: string, instrumentName?: string, slot?: string, date?: string) => {
     try {
       setError(null)
       
@@ -143,7 +143,7 @@ export function useReservations(options: UseReservationsOptions = {}) {
         optimisticDeleteReservation(instrumentName, slot, date)
       }
       
-      await apiClient.deleteReservation(id)
+      await apiClient.deleteReservation(id, reserverUserId)
       console.log('Reservation deleted, refreshing data...')
       
       // Remove from optimistic updates if we applied one

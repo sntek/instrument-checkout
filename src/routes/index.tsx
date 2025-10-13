@@ -35,6 +35,10 @@ function App() {
     )
   }, [user])
 
+  const currentUserId = React.useMemo(() => {
+    return user?.id || ''
+  }, [user])
+
   function isSlotReserved(instrumentName: string, slot: string, date: string) {
     return Boolean(reservations[instrumentName]?.[`${date}-${slot}`])
   }
@@ -61,19 +65,20 @@ function App() {
         // Delete the reservation using the ID
         console.log('Deleting reservation for:', { instrumentName, slot, date, id: reservationInfo?.id })
         if (reservationInfo?.id) {
-          await deleteReservation(reservationInfo.id, instrumentName, slot, date)
+          await deleteReservation(reservationInfo.id, currentUserId, instrumentName, slot, date)
           console.log('Reservation deleted')
         } else {
           console.error('No reservation ID found for deletion')
         }
       } else {
         // Create new reservation
-        console.log('Creating reservation:', { instrumentName, slot, date, reserverName: currentDisplayName })
+        console.log('Creating reservation:', { instrumentName, slot, date, reserverName: currentDisplayName, reserverUserId: currentUserId })
         await createReservation({
           instrumentName,
           slot,
           date,
-          reserverName: currentDisplayName
+          reserverName: currentDisplayName,
+          reserverUserId: currentUserId
         })
         console.log('Reservation created, should refresh automatically')
       }
@@ -100,6 +105,7 @@ function App() {
                 onOpenChange={(open) => setOpenInstrument(open ? instrument.name : null)}
                 reservationsByInstrument={reservations}
                 currentDisplayName={currentDisplayName}
+                currentUserId={currentUserId}
                 onToggleSlot={toggleSlot}
                 onIsSlotReserved={isSlotReserved}
                 onIsOptimisticallyUpdating={isOptimisticallyUpdating}

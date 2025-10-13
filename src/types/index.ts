@@ -11,6 +11,7 @@ export interface Reservation {
   slot: string
   date: string
   reserverName: string
+  reserverUserId: string
   createdAt: string
   updatedAt: string
 }
@@ -20,6 +21,7 @@ export interface CreateReservationRequest {
   slot: string
   date: string
   reserverName: string
+  reserverUserId: string
 }
 
 export interface ApiResponse<T = any> {
@@ -30,6 +32,7 @@ export interface ApiResponse<T = any> {
 
 export interface ReservationInfo {
   reserverName: string
+  reserverUserId: string
   id: string
 }
 

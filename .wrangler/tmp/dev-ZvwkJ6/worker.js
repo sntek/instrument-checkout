@@ -56,6 +56,7 @@ async function getReservations(request, env) {
       const slotKey = `${reservation.date}-${reservation.slot}`;
       reservationsByInstrument[reservation.instrumentName][slotKey] = {
         reserverName: reservation.reserverName,
+        reserverUserId: reservation.reserverUserId,
         id: reservation.id
       };
     });
@@ -88,11 +89,11 @@ __name(getReservations, "getReservations");
 async function createReservation(request, env) {
   try {
     const body = await request.json();
-    const { instrumentName, slot, date, reserverName } = body;
-    if (!instrumentName || !slot || !date || !reserverName) {
+    const { instrumentName, slot, date, reserverName, reserverUserId } = body;
+    if (!instrumentName || !slot || !date || !reserverName || !reserverUserId) {
       const response = {
         success: false,
-        error: "Missing required fields: instrumentName, slot, date, reserverName"
+        error: "Missing required fields: instrumentName, slot, date, reserverName, reserverUserId"
       };
       return new Response(JSON.stringify(response), {
         status: 400,
@@ -127,9 +128,9 @@ async function createReservation(request, env) {
     const id = crypto.randomUUID();
     const now = (/* @__PURE__ */ new Date()).toISOString();
     const result = await env.DB.prepare(`
-      INSERT INTO reservations (id, instrumentName, slot, date, reserverName, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).bind(id, instrumentName, slot, date, reserverName, now, now).run();
+      INSERT INTO reservations (id, instrumentName, slot, date, reserverName, reserverUserId, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(id, instrumentName, slot, date, reserverName, reserverUserId, now, now).run();
     if (result.success) {
       const response = {
         success: true,
@@ -139,6 +140,7 @@ async function createReservation(request, env) {
           slot,
           date,
           reserverName,
+          reserverUserId,
           createdAt: now,
           updatedAt: now
         }
@@ -172,6 +174,24 @@ __name(createReservation, "createReservation");
 async function deleteReservation(request, env, params) {
   try {
     const { id } = params;
+    const body = await request.json().catch(() => ({}));
+    const { reserverUserId } = body;
+    if (!reserverUserId) {
+      const response = {
+        success: false,
+        error: "User ID is required to delete reservation"
+      };
+      return new Response(JSON.stringify(response), {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Max-Age": "86400"
+        }
+      });
+    }
     const existingReservation = await env.DB.prepare(
       "SELECT * FROM reservations WHERE id = ?"
     ).bind(id).first();
@@ -182,6 +202,22 @@ async function deleteReservation(request, env, params) {
       };
       return new Response(JSON.stringify(response), {
         status: 404,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Max-Age": "86400"
+        }
+      });
+    }
+    if (existingReservation.reserverUserId !== reserverUserId) {
+      const response = {
+        success: false,
+        error: "You can only delete your own reservations"
+      };
+      return new Response(JSON.stringify(response), {
+        status: 403,
         headers: {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",

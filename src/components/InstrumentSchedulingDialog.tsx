@@ -17,6 +17,7 @@ interface Instrument {
 
 interface ReservationInfo {
   reserverName: string
+  reserverUserId: string
   id: string
 }
 
@@ -26,6 +27,7 @@ interface InstrumentSchedulingDialogProps {
   onOpenChange: (open: boolean) => void
   reservationsByInstrument: Record<string, Record<string, ReservationInfo>>
   currentDisplayName: string
+  currentUserId: string
   onToggleSlot: (instrumentName: string, slot: string, date: string) => void
   onIsSlotReserved: (instrumentName: string, slot: string, date: string) => boolean
   onIsOptimisticallyUpdating: (instrumentName: string, slot: string, date: string) => boolean
@@ -37,6 +39,7 @@ export function InstrumentSchedulingDialog({
   onOpenChange,
   reservationsByInstrument,
   currentDisplayName,
+  currentUserId,
   onToggleSlot,
   onIsSlotReserved,
   onIsOptimisticallyUpdating,
@@ -152,7 +155,7 @@ export function InstrumentSchedulingDialog({
                   const selected = Boolean(reservationsByInstrument[instrument.name]?.[`${todayDateString}-${slot}`])
                   const reservationInfo = reservationsByInstrument[instrument.name]?.[`${todayDateString}-${slot}`]
                   const reserver = reservationInfo?.reserverName
-                  const isMine = reserver && reserver === currentDisplayName
+                  const isMine = reservationInfo?.reserverUserId === currentUserId
                   const isOptimisticallyUpdating = onIsOptimisticallyUpdating(instrument.name, slot, todayDateString)
                   return (
                     <Tooltip key={slot}>
@@ -214,7 +217,7 @@ export function InstrumentSchedulingDialog({
                   const selected = Boolean(reservationsByInstrument[instrument.name]?.[`${tomorrowDateString}-${slot}`])
                   const reservationInfo = reservationsByInstrument[instrument.name]?.[`${tomorrowDateString}-${slot}`]
                   const reserver = reservationInfo?.reserverName
-                  const isMine = reserver && reserver === currentDisplayName
+                  const isMine = reservationInfo?.reserverUserId === currentUserId
                   const isOptimisticallyUpdating = onIsOptimisticallyUpdating(instrument.name, slot, tomorrowDateString)
                   return (
                     <Tooltip key={slot}>

@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS reservations (
   slot TEXT NOT NULL,
   date TEXT NOT NULL,
   reserverName TEXT NOT NULL,
+  reserverUserId TEXT NOT NULL,
   createdAt TEXT NOT NULL,
   updatedAt TEXT NOT NULL
 );
@@ -15,6 +16,9 @@ ON reservations(instrumentName, date, slot);
 
 CREATE INDEX IF NOT EXISTS idx_reservations_reserver 
 ON reservations(reserverName);
+
+CREATE INDEX IF NOT EXISTS idx_reservations_reserver_user_id 
+ON reservations(reserverUserId);
 
 -- Create instruments table (optional - for dynamic instrument management)
 CREATE TABLE IF NOT EXISTS instruments (

@@ -59,9 +59,10 @@ class ApiClient {
     return response.data!
   }
 
-  async deleteReservation(id: string): Promise<void> {
+  async deleteReservation(id: string, reserverUserId: string): Promise<void> {
     const response = await this.request(`/api/reservations/${id}`, {
       method: 'DELETE',
+      body: JSON.stringify({ reserverUserId }),
     })
     
     if (!response.success) {

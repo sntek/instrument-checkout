@@ -11,6 +11,7 @@ export interface Instrument {
 
 interface ReservationInfo {
   reserverName: string
+  reserverUserId: string
   id: string
 }
 
@@ -20,6 +21,7 @@ interface InstrumentCardProps {
   onOpenChange: (open: boolean) => void
   reservationsByInstrument: Record<string, Record<string, ReservationInfo>>
   currentDisplayName: string
+  currentUserId: string
   onToggleSlot: (instrumentName: string, slot: string, date: string) => void
   onIsSlotReserved: (instrumentName: string, slot: string, date: string) => boolean
   onIsOptimisticallyUpdating: (instrumentName: string, slot: string, date: string) => boolean
@@ -31,6 +33,7 @@ export function InstrumentCard({
   onOpenChange,
   reservationsByInstrument,
   currentDisplayName,
+  currentUserId,
   onToggleSlot,
   onIsSlotReserved,
   onIsOptimisticallyUpdating,
@@ -58,6 +61,7 @@ export function InstrumentCard({
         onOpenChange={onOpenChange}
         reservationsByInstrument={reservationsByInstrument}
         currentDisplayName={currentDisplayName}
+        currentUserId={currentUserId}
         onToggleSlot={onToggleSlot}
         onIsSlotReserved={onIsSlotReserved}
         onIsOptimisticallyUpdating={onIsOptimisticallyUpdating}

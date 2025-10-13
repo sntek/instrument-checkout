@@ -25,9 +25,10 @@ export async function getReservations(request: Request, env: Env): Promise<Respo
         reservationsByInstrument[reservation.instrumentName] = {}
       }
       const slotKey = `${reservation.date}-${reservation.slot}`
-      // Store both reserver name and ID for deletion
+      // Store both reserver name, user ID, and reservation ID for deletion
       reservationsByInstrument[reservation.instrumentName][slotKey] = {
         reserverName: reservation.reserverName,
+        reserverUserId: reservation.reserverUserId,
         id: reservation.id
       }
     })
@@ -62,12 +63,12 @@ export async function getReservations(request: Request, env: Env): Promise<Respo
 export async function createReservation(request: Request, env: Env): Promise<Response> {
   try {
     const body: CreateReservationRequest = await request.json()
-    const { instrumentName, slot, date, reserverName } = body
+    const { instrumentName, slot, date, reserverName, reserverUserId } = body
     
-    if (!instrumentName || !slot || !date || !reserverName) {
+    if (!instrumentName || !slot || !date || !reserverName || !reserverUserId) {
       const response: ApiResponse = {
         success: false,
-        error: 'Missing required fields: instrumentName, slot, date, reserverName'
+        error: 'Missing required fields: instrumentName, slot, date, reserverName, reserverUserId'
       }
       return new Response(JSON.stringify(response), {
         status: 400,
@@ -108,9 +109,9 @@ export async function createReservation(request: Request, env: Env): Promise<Res
     const now = new Date().toISOString()
     
     const result = await env.DB.prepare(`
-      INSERT INTO reservations (id, instrumentName, slot, date, reserverName, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).bind(id, instrumentName, slot, date, reserverName, now, now).run()
+      INSERT INTO reservations (id, instrumentName, slot, date, reserverName, reserverUserId, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(id, instrumentName, slot, date, reserverName, reserverUserId, now, now).run()
     
     if (result.success) {
       const response: ApiResponse<Reservation> = {
@@ -121,6 +122,7 @@ export async function createReservation(request: Request, env: Env): Promise<Res
           slot,
           date,
           reserverName,
+          reserverUserId,
           createdAt: now,
           updatedAt: now
         }
@@ -155,6 +157,27 @@ export async function deleteReservation(request: Request, env: Env, params: { id
   try {
     const { id } = params
     
+    // Get the user ID from the request body or headers
+    const body = await request.json().catch(() => ({}))
+    const { reserverUserId } = body
+    
+    if (!reserverUserId) {
+      const response: ApiResponse = {
+        success: false,
+        error: 'User ID is required to delete reservation'
+      }
+      return new Response(JSON.stringify(response), {
+        status: 400,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Max-Age': '86400',
+        }
+      })
+    }
+    
     // Check if reservation exists
     const existingReservation = await env.DB.prepare(
       'SELECT * FROM reservations WHERE id = ?'
@@ -167,6 +190,24 @@ export async function deleteReservation(request: Request, env: Env, params: { id
       }
       return new Response(JSON.stringify(response), {
         status: 404,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Max-Age': '86400',
+        }
+      })
+    }
+    
+    // Check if the user owns the reservation
+    if (existingReservation.reserverUserId !== reserverUserId) {
+      const response: ApiResponse = {
+        success: false,
+        error: 'You can only delete your own reservations'
+      }
+      return new Response(JSON.stringify(response), {
+        status: 403,
         headers: { 
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
