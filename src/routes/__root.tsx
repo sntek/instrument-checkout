@@ -1,6 +1,7 @@
 import { Outlet, createRootRoute } from '@tanstack/react-router'
 
 import ClerkProvider from '../integrations/clerk/provider'
+import { Toaster } from '../components/ui/sonner'
 
 export const Route = createRootRoute({
   component: () => (
@@ -11,6 +12,7 @@ export const Route = createRootRoute({
             <Outlet />
           </main>
         </div>
+        <Toaster />
       </ClerkProvider>
     </>
   ),

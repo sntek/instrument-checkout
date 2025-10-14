@@ -20,11 +20,15 @@ class ApiClient {
       ...options,
     })
 
+    const data = await response.json()
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      // If the response has an error message, use it; otherwise use the generic HTTP error
+      const errorMessage = data.error || `HTTP error! status: ${response.status}`
+      throw new Error(errorMessage)
     }
 
-    return response.json()
+    return data
   }
 
   async getInstruments(): Promise<Instrument[]> {

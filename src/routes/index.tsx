@@ -1,6 +1,7 @@
 import React from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { SignedIn, SignedOut, useUser } from '@clerk/clerk-react'
+import { toast } from 'sonner'
 import { Header } from '@/components/Header'
 import { SignInRequired } from '@/components/SignInRequired'
 import { InstrumentCard } from '@/components/InstrumentCard'
@@ -60,6 +61,14 @@ function App() {
     
     console.log('Toggle slot:', { instrumentName, slot, date, slotKey, isReserved, reservationInfo, currentReservations: reservations })
     
+    // Check if user is authenticated
+    if (!currentUserId) {
+      toast.error('Authentication Required', {
+        description: 'Please sign in to manage reservations.',
+      })
+      return
+    }
+    
     try {
       if (isReserved) {
         // Delete the reservation using the ID
@@ -84,7 +93,18 @@ function App() {
       }
     } catch (error) {
       console.error('Error toggling slot:', error)
-      // You might want to show a toast notification here
+      
+      // Check if the error is related to trying to delete another user's reservation
+      if (error instanceof Error && error.message.includes('You can only delete your own reservations')) {
+        toast.warning('Access Denied', {
+          description: 'You can only delete your own reservations.',
+        })
+      } else {
+        // Generic error toast for other issues
+        toast.error('Error', {
+          description: 'Something went wrong. Please try again.',
+        })
+      }
     }
   }
 
