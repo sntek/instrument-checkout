@@ -1,6 +1,7 @@
 import { corsHeaders } from './utils/cors'
 import { createReservation, getReservations, deleteReservation } from './handlers/reservations'
 import { getInstruments } from './handlers/instruments'
+import { handleDailyReservationRollover } from './handlers/cron'
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -62,6 +63,16 @@ export default {
         status: 500,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
       })
+    }
+  },
+
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    try {
+      console.log('Cron job triggered:', event.scheduledTime)
+      await handleDailyReservationRollover(env)
+    } catch (error) {
+      console.error('Cron job failed:', error)
+      throw error
     }
   }
 }

@@ -10,3 +10,7 @@ database_id = "4a9999a1-71cc-476a-ab74-ae2b119c331f"
 
 [vars]
 ENVIRONMENT = "production"
+
+# Cron trigger - runs daily at midnight UTC
+[triggers]
+crons = ["0 0 * * *"]
