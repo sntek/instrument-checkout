@@ -1,6 +1,6 @@
 import { Reservation, CreateReservationRequest, ApiResponse, ReservationsByInstrument, Instrument } from '../types'
 
-const API_BASE_URL = 'https://instrument-checkout-api.shouryan-nikam.workers.dev'
+const API_BASE_URL = 'https://instrument-checkout-backend.vercel.app'
 
 class ApiClient {
   private baseUrl: string
@@ -36,7 +36,16 @@ class ApiClient {
     if (!response.success) {
       throw new Error(response.error || 'Failed to fetch instruments')
     }
-    return response.data!
+    
+    // Transform the data to handle backend field mapping
+    const instruments = response.data!.map(instrument => ({
+      name: instrument.name,
+      os: instrument.os,
+      group: instrument.group || instrument.group_name, // Handle both field names
+      ip: instrument.ip
+    }))
+    
+    return instruments
   }
 
   async getReservations(instrumentName?: string): Promise<ReservationsByInstrument> {
@@ -48,7 +57,29 @@ class ApiClient {
     if (!response.success) {
       throw new Error(response.error || 'Failed to fetch reservations')
     }
-    return response.data!
+    
+    // Clean up malformed data from backend
+    const cleanedData: ReservationsByInstrument = {}
+    const rawData = response.data!
+    
+    for (const [instrument, slots] of Object.entries(rawData)) {
+      // Skip entries with undefined instrument names
+      if (instrument === 'undefined') {
+        continue
+      }
+      
+      cleanedData[instrument] = {}
+      for (const [slotKey, reservationInfo] of Object.entries(slots)) {
+        // Ensure reservation info has all required fields
+        cleanedData[instrument][slotKey] = {
+          reserverName: reservationInfo.reserverName || 'Unknown',
+          reserverUserId: reservationInfo.reserverUserId || 'unknown',
+          id: reservationInfo.id
+        }
+      }
+    }
+    
+    return cleanedData
   }
 
   async createReservation(reservation: CreateReservationRequest): Promise<Reservation> {

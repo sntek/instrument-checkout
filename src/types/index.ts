@@ -2,6 +2,7 @@ export interface Instrument {
   name: string
   os?: string
   group?: string
+  group_name?: string // Backend field name
   ip?: string
 }
 

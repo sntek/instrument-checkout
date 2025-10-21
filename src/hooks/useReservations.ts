@@ -61,6 +61,7 @@ export function useReservations(options: UseReservationsOptions = {}) {
       }
       newReservations[reservation.instrumentName][slotKey] = {
         reserverName: reservation.reserverName,
+        reserverUserId: reservation.reserverUserId,
         id: `temp-${Date.now()}` // Temporary ID for optimistic updates
       }
       return newReservations

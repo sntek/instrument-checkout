@@ -42,6 +42,18 @@ pnpm check
 ```
 
 
+## Backend
+
+This application uses a Vercel backend deployed at `https://instrument-checkout-backend.vercel.app/`. The backend provides the following API endpoints:
+
+- `GET /api/health` - Health check
+- `GET /api/instruments` - Get all instruments
+- `GET /api/reservations` - Get all reservations (optionally filter by instrumentName)
+- `POST /api/reservations` - Create a new reservation
+- `DELETE /api/reservations/[id]` - Delete a reservation
+- `POST /api/migrate` - Initialize database tables and insert default instruments
+- `POST /api/cron/daily-rollover` - Daily rollover cron job
+
 ## Setting up Clerk
 
 - Set the `VITE_CLERK_PUBLISHABLE_KEY` in your `.env.local`.
