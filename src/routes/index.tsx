@@ -110,7 +110,16 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
-      <Header />
+      <div className="flex items-center justify-center h-screen">
+        <div className="bg-white/90 p-8 rounded-lg shadow-lg text-center max-w-md mx-auto">
+          <h1 className="text-2xl font-bold text-slate-900 mb-4">Instrument Checkout Maintenance</h1>
+          <p className="text-slate-700">
+            Instrument checkout is currently <span className="font-semibold">undergoing maintenance</span>.<br />
+            Please use Excel for a bit!
+          </p>
+        </div>
+      </div>
+      {/* <Header />
       <div className="fixed top-4 right-4 z-50 text-white hover:text-cyan-500 transition-colors hover:underline">
         <ClerkHeader />
       </div>
@@ -137,7 +146,7 @@ function App() {
 
       <SignedOut>
         <SignInRequired />
-      </SignedOut>
+      </SignedOut> */}
     </div>
   )
 }
